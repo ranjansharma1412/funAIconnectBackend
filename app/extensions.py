@@ -4,4 +4,11 @@ from flask_cors import CORS
 
 db = SQLAlchemy()
 migrate = Migrate()
-cors = CORS()
+
+# Configure CORS to allow all origins for development
+cors = CORS(
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
