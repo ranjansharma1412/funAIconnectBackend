@@ -39,6 +39,8 @@ def create_post():
         user_handle = data.get('userHandle')
         # userImage is strictly URL in this requirement or string
         user_image = data.get('userImage')
+        description = data.get('description')
+        hashtags = data.get('hashtags')
         is_verified = data.get('isVerified', 'false').lower() == 'true'
         likes = data.get('likes', 0, type=int)
         
@@ -53,6 +55,8 @@ def create_post():
             user_name=user_name,
             user_handle=user_handle,
             user_image=user_image,
+            description=description,
+            hashtags=hashtags,
             is_verified=is_verified,
             post_image=post_image_path,
             likes=likes

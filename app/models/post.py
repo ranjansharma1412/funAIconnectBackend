@@ -8,6 +8,8 @@ class Post(db.Model):
     user_image = db.Column(db.String(255), nullable=True)  # URL or path for user avatar
     is_verified = db.Column(db.Boolean, default=False)
     post_image = db.Column(db.String(255), nullable=True)  # URL or path for post content image
+    description = db.Column(db.Text, nullable=True)
+    hashtags = db.Column(db.String(255), nullable=True)
     likes = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -19,6 +21,8 @@ class Post(db.Model):
             'userImage': self.user_image,
             'isVerified': self.is_verified,
             'postImage': self.post_image,
+            'description': self.description,
+            'hashtags': self.hashtags,
             'likes': self.likes,
             'createdAt': self.created_at.isoformat()
         }
