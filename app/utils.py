@@ -3,6 +3,17 @@ import uuid
 from werkzeug.utils import secure_filename
 from flask import current_app
 
+import cloudinary
+import cloudinary.uploader
+
+# Configure Cloudinary
+cloudinary.config( 
+  cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'), 
+  api_key = os.getenv('CLOUDINARY_API_KEY'), 
+  api_secret = os.getenv('CLOUDINARY_API_SECRET'),
+  secure = True
+)
+
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     return '.' in filename and \
@@ -13,18 +24,11 @@ def save_image(file_storage):
         return None
     
     if allowed_file(file_storage.filename):
-        original_filename = secure_filename(file_storage.filename)
-        extension = original_filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4().hex}.{extension}"
-        
-        upload_folder = current_app.config['UPLOAD_FOLDER']
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-            
-        file_path = os.path.join(upload_folder, unique_filename)
-        file_storage.save(file_path)
-        
-        # Return relative path for URL generation
-        return f"uploads/{unique_filename}"
+        try:
+            upload_result = cloudinary.uploader.upload(file_storage)
+            return upload_result.get('secure_url')
+        except Exception as e:
+            print(f"Cloudinary upload failed: {e}")
+            return None
     
     return None
