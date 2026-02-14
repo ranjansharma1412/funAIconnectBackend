@@ -21,4 +21,7 @@ def create_app(config_class=Config):
     from app.api.posts import bp as posts_bp
     app.register_blueprint(posts_bp, url_prefix='/api/posts')
 
+    from app.api.image import bp as image_bp
+    app.register_blueprint(image_bp, url_prefix='/api/image')
+
     return app
