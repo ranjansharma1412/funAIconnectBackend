@@ -22,50 +22,6 @@
             "name": "Authentication",
             "item": [
                 {
-                    "name": "Login",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "if (pm.response.code === 200) {",
-                                    "    var jsonData = pm.response.json();",
-                                    "    pm.collectionVariables.set(\"auth_token\", jsonData.token);",
-                                    "    console.log(\"Token saved:\", jsonData.token);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"email\": \"demo@funai.com\",\n    \"password\": \"demo123\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/auth/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "auth",
-                                "login"
-                            ]
-                        },
-                        "description": "Login with demo credentials. Token will be automatically saved to collection variable.\n\nDemo credentials:\n- Email: demo@funai.com\n- Password: demo123"
-                    },
-                    "response": []
-                },
-                {
                     "name": "Register",
                     "event": [
                         {
@@ -92,7 +48,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"email\": \"newuser@funai.com\",\n    \"password\": \"password123\",\n    \"name\": \"New User\"\n}"
+                            "raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newuser@funai.com\",\n    \"password\": \"password123\",\n    \"full_name\": \"New User\",\n    \"mobile\": \"1234567890\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/auth/register",
@@ -106,6 +62,50 @@
                             ]
                         },
                         "description": "Register a new user. Token will be automatically saved to collection variable."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"auth_token\", jsonData.token);",
+                                    "    console.log(\"Token saved:\", jsonData.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"identifier\": \"newuser\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Login with identifier (username or email). Token will be automatically saved to collection variable."
                     },
                     "response": []
                 },
@@ -132,6 +132,183 @@
                             ]
                         },
                         "description": "Verify if the current token is valid. Requires authentication."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "full_name",
+                                    "value": "Update User Name",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "username",
+                                    "value": "updated_username",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "bio",
+                                    "value": "Updated bio",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "mobile",
+                                    "value": "9876543210",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "userImage",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "profile"
+                            ]
+                        },
+                        "description": "Update user profile. Email cannot be updated."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Check Username",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"username\": \"newuser\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/check-username",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "check-username"
+                            ]
+                        },
+                        "description": "Check if a username is available."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Change Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{auth_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"old_password\": \"password123\",\n    \"new_password\": \"newpassword456\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/change-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "change-password"
+                            ]
+                        },
+                        "description": "Change user password. Requires authentication."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"newuser@funai.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/forgot-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "forgot-password"
+                            ]
+                        },
+                        "description": "Request password reset token."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"<PASTE_TOKEN_HERE>\",\n    \"new_password\": \"resetpassword789\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/reset-password",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "reset-password"
+                            ]
+                        },
+                        "description": "Reset password using the token obtained from forgot-password."
                     },
                     "response": []
                 }
