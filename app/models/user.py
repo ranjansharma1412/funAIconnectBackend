@@ -4,9 +4,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    name = db.Column(db.String(100), nullable=True)
+    full_name = db.Column(db.String(100), nullable=True)
     user_image = db.Column(db.String(255), nullable=True) # Cloudinary URL
     mobile = db.Column(db.String(20), nullable=True)
     bio = db.Column(db.String(500), nullable=True)
@@ -22,8 +23,9 @@ class User(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'username': self.username,
             'email': self.email,
-            'name': self.name,
+            'fullName': self.full_name,
             'userImage': self.user_image,
             'mobile': self.mobile,
             'bio': self.bio,
