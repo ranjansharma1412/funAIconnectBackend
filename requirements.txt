@@ -13,3 +13,4 @@ accelerate
 sentencepiece
 protobuf
 bitsandbytes
+Flask-Mail==0.10.0

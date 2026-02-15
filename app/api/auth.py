@@ -259,12 +259,45 @@ def forgot_password():
     }
     reset_token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
     
-    # In a real app, send this token via email
-    # For now, return it in the response
+    # Generate HTTP link that redirects to Custom Scheme
+    # This ensures email clients (Gmail) don't block the link
+    base_url = request.host_url.rstrip('/')
+    reset_link = f"{base_url}/api/auth/reset-password-redirect/{reset_token}"
+    
     return jsonify({
         'message': 'Reset token generated successfully',
-        'reset_token': reset_token
+        'reset_token': reset_token,
+        'reset_link': reset_link
     }), 200
+
+@bp.route('/reset-password-redirect/<token>', methods=['GET'])
+def reset_password_redirect(token):
+    """Serve HTML page to redirect to custom scheme"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Redirecting...</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script>
+            window.onload = function() {{
+                window.location.href = "funai://reset-password/{token}";
+                
+                // Fallback: If custom scheme fails (e.g. desktop), show message
+                setTimeout(function() {{
+                    document.getElementById('message').innerText = "If the app didn't open, please ensure FunAI Connect is installed.";
+                }}, 2000);
+            }};
+        </script>
+    </head>
+    <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background-color: #f5f5f5; text-align: center; padding: 20px;">
+        <h2 style="color: #333;">Redirecting to FunAI Connect...</h2>
+        <p id="message" style="color: #666; margin-bottom: 20px;">Please wait while we open the app.</p>
+        <a href="funai://reset-password/{token}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Open App Manually</a>
+    </body>
+    </html>
+    """
+    return html
 
 @bp.route('/reset-password', methods=['POST'])
 def reset_password():
