@@ -61,6 +61,15 @@ def login():
         return jsonify({'error': 'No data provided'}), 400
     
     identifier = data.get('identifier') # email or username
+    
+    # Fallback to email if identifier is not provided (for backward compatibility)
+    if not identifier:
+        identifier = data.get('email')
+
+    # Also fallback to username if identifier is not provided (for consistency)
+    if not identifier:
+        identifier = data.get('username')
+        
     password = data.get('password')
     
     if not identifier or not password:
@@ -188,6 +197,7 @@ def update_profile():
         db.session.rollback()
         return jsonify({'error': 'Failed to update profile'}), 500
 
+
 @bp.route('/check-username', methods=['POST'])
 def check_username():
     """Check if username is available"""
@@ -202,3 +212,93 @@ def check_username():
         return jsonify({'available': False, 'message': 'Username is already taken'}), 200
     
     return jsonify({'available': True, 'message': 'Username is available'}), 200
+
+@bp.route('/change-password', methods=['POST'])
+@token_required
+def change_password():
+    """Change user password"""
+    data = request.get_json()
+    user = request.current_user
+    
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+    
+    if not old_password or not new_password:
+        return jsonify({'error': 'Old and new passwords are required'}), 400
+        
+    if not user.check_password(old_password):
+        return jsonify({'error': 'Invalid old password'}), 401
+        
+    user.set_password(new_password)
+    
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Password updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update password'}), 500
+
+@bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """Generate reset token for forgot password"""
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+         return jsonify({'error': 'Email is required'}), 400
+         
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+        
+    # Generate reset token (valid for 15 mins)
+    payload = {
+        'reset_id': user.id,
+        'exp': datetime.utcnow() + timedelta(minutes=15),
+        'iat': datetime.utcnow()
+    }
+    reset_token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    
+    # In a real app, send this token via email
+    # For now, return it in the response
+    return jsonify({
+        'message': 'Reset token generated successfully',
+        'reset_token': reset_token
+    }), 200
+
+@bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password using token"""
+    data = request.get_json()
+    token = data.get('token')
+    new_password = data.get('new_password')
+    
+    if not token or not new_password:
+        return jsonify({'error': 'Token and new password are required'}), 400
+        
+    try:
+        if token.startswith('Bearer '):
+                token = token[7:]
+                
+        data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        user_id = data.get('reset_id')
+        
+        if not user_id:
+             return jsonify({'error': 'Invalid reset token'}), 400
+             
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        user.set_password(new_password)
+        db.session.commit()
+        
+        return jsonify({'message': 'Password reset successfully'}), 200
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to reset password'}), 500
