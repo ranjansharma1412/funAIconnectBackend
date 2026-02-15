@@ -8,12 +8,13 @@ from app.utils import save_image
 
 bp = Blueprint('auth', __name__)
 
-def generate_token(user_id, email, name):
+def generate_token(user_id, email, full_name, username):
     """Generate JWT token for authenticated user"""
     payload = {
         'id': user_id,
         'email': email,
-        'name': name,
+        'name': full_name,
+        'username': username,
         'exp': datetime.utcnow() + timedelta(days=1),
         'iat': datetime.utcnow()
     }
@@ -59,19 +60,19 @@ def login():
     if not data:
         return jsonify({'error': 'No data provided'}), 400
     
-    email = data.get('email')
+    identifier = data.get('identifier') # email or username
     password = data.get('password')
     
-    if not email or not password:
-        return jsonify({'error': 'Email and password are required'}), 400
+    if not identifier or not password:
+        return jsonify({'error': 'Identifier (email or username) and password are required'}), 400
     
     # Check credentials
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter((User.email == identifier) | (User.username == identifier)).first()
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid credentials'}), 401
     
     # Generate token
-    token = generate_token(user.id, user.email, user.name)
+    token = generate_token(user.id, user.email, user.full_name, user.username)
     
     return jsonify({
         'message': 'Login successful',
@@ -89,18 +90,23 @@ def register():
     
     email = data.get('email')
     password = data.get('password')
-    name = data.get('name', 'User')
+    full_name = data.get('full_name') or data.get('name', 'User')
+    username = data.get('username')
     mobile = data.get('mobile') # Optional
     
-    if not email or not password:
-        return jsonify({'error': 'Email and password are required'}), 400
+    if not email or not password or not username:
+        return jsonify({'error': 'Email, password and username are required'}), 400
     
-    # Check if user already exists
+    # Check if email already exists
     if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'User already exists'}), 409
+        return jsonify({'error': 'Email is already registered'}), 409
+
+    # Check if username already exists
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username is already taken'}), 409
     
     # Create new user
-    new_user = User(email=email, name=name, mobile=mobile)
+    new_user = User(email=email, full_name=full_name, username=username, mobile=mobile)
     new_user.set_password(password)
     
     try:
@@ -111,7 +117,7 @@ def register():
         return jsonify({'error': 'Registration failed'}), 500
     
     # Generate token
-    token = generate_token(new_user.id, new_user.email, new_user.name)
+    token = generate_token(new_user.id, new_user.email, new_user.full_name, new_user.username)
     
     return jsonify({
         'message': 'Registration successful',
@@ -131,7 +137,7 @@ def verify_token():
 @bp.route('/profile', methods=['PUT'])
 @token_required
 def update_profile():
-    """Update user profile: Name, Mobile, Bio, DOB, Image and Email"""
+    """Update user profile: Full Name, Username, Mobile, Bio, DOB, Image and Email"""
     user = request.current_user
     
     # Handle multipart/form-data
@@ -139,20 +145,24 @@ def update_profile():
     file = request.files.get('userImage')
 
     email = data.get('email')
-    name = data.get('name')
+    full_name = data.get('full_name') or data.get('name')
+    username = data.get('username')
     mobile = data.get('mobile')
     bio = data.get('bio')
     dob = data.get('dob')
     
     if email:
-         # Check if email is already taken by another user
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user and existing_user.id != user.id:
-            return jsonify({'error': 'Email already in use'}), 409
-        user.email = email
+        return jsonify({'error': 'Email cannot be updated'}), 400
 
-    if name:
-        user.name = name
+    if username:
+        # Check if username is already taken by another user
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user and existing_user.id != user.id:
+            return jsonify({'error': 'Username already in use'}), 409
+        user.username = username
+
+    if full_name:
+        user.full_name = full_name
         
     if mobile:
         user.mobile = mobile
@@ -177,3 +187,18 @@ def update_profile():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Failed to update profile'}), 500
+
+@bp.route('/check-username', methods=['POST'])
+def check_username():
+    """Check if username is available"""
+    data = request.get_json()
+    username = data.get('username')
+    
+    if not username:
+        return jsonify({'error': 'Username is required'}), 400
+    
+    user = User.query.filter_by(username=username).first()
+    if user:
+        return jsonify({'available': False, 'message': 'Username is already taken'}), 200
+    
+    return jsonify({'available': True, 'message': 'Username is available'}), 200
