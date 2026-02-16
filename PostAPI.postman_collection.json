@@ -464,6 +464,83 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Comments",
+            "item": [
+                {
+                    "name": "Create Comment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"content\": \"This is a great post!\",\n    \"userId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/posts/1/comments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "posts",
+                                "1",
+                                "comments"
+                            ]
+                        },
+                        "description": "Add a comment to a post. Requires userId in body for now."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Post Comments",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/posts/1/comments",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "posts",
+                                "1",
+                                "comments"
+                            ]
+                        },
+                        "description": "Get all comments for a post"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Comment",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/posts/comments/1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "posts",
+                                "comments",
+                                "1"
+                            ]
+                        },
+                        "description": "Delete a specific comment"
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

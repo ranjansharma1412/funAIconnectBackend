@@ -88,3 +88,70 @@ def delete_post(id):
 @bp.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+# Comment Routes
+
+@bp.route('/<int:post_id>/comments', methods=['GET'])
+def get_comments(post_id):
+    from app.models.comment import Comment
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+
+    pagination = Comment.query.filter_by(post_id=post_id).order_by(Comment.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    comments = [comment.to_dict() for comment in pagination.items]
+
+    return jsonify({
+        'comments': comments,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'page': page
+    }), 200
+
+@bp.route('/<int:post_id>/comments', methods=['POST'])
+def create_comment(post_id):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data provided'}), 400
+            
+        content = data.get('content')
+        user_id = data.get('userId')
+        
+        if not content:
+            return jsonify({'error': 'Content is required'}), 400
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        # Verify post exists
+        post = Post.query.get_or_404(post_id)
+        
+        from app.models.comment import Comment
+        comment = Comment(
+            content=content,
+            user_id=user_id,
+            post_id=post_id
+        )
+        
+        db.session.add(comment)
+        db.session.commit()
+        
+        return jsonify(comment.to_dict()), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/comments/<int:comment_id>', methods=['DELETE'])
+def delete_comment(comment_id):
+    from app.models.comment import Comment
+    comment = Comment.query.get_or_404(comment_id)
+    
+    db.session.delete(comment)
+    db.session.commit()
+    
+    return jsonify({'message': 'Comment deleted successfully'}), 200
