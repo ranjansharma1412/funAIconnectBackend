@@ -146,10 +146,13 @@ def create_comment(post_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/comments/<int:comment_id>', methods=['DELETE'])
-def delete_comment(comment_id):
+@bp.route('/<int:post_id>/comments/<int:comment_id>', methods=['DELETE'])
+def delete_comment(post_id, comment_id):
     from app.models.comment import Comment
     comment = Comment.query.get_or_404(comment_id)
+    
+    if comment.post_id != post_id:
+        return jsonify({'error': 'Comment does not belong to this post'}), 400
     
     db.session.delete(comment)
     db.session.commit()

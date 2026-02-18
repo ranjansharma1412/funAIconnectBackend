@@ -76,7 +76,7 @@ def test_comment_flow():
         print("\n[3] Retrieving comments...")
         get_res = client.get(f'/api/posts/{post_id}/comments')
         if get_res.status_code == 200:
-            comments = get_res.get_json()
+            comments = get_res.get_json()['comments']
             print(f"✓ Retrieved {len(comments)} comments")
             if len(comments) > 0:
                 print(f"  First comment: {comments[0]['content']}")
@@ -85,7 +85,7 @@ def test_comment_flow():
 
         # 4. Delete Comment
         print("\n[4] Deleting comment...")
-        del_res = client.delete(f'/api/posts/comments/{comment_id}')
+        del_res = client.delete(f'/api/posts/{post_id}/comments/{comment_id}')
         if del_res.status_code == 200:
             print("✓ Comment deleted successfully")
         else:
@@ -94,7 +94,7 @@ def test_comment_flow():
         # 5. Verify Deletion
         print("\n[5] Verifying deletion...")
         get_res_2 = client.get(f'/api/posts/{post_id}/comments')
-        comments_2 = get_res_2.get_json()
+        comments_2 = get_res_2.get_json()['comments']
         if len(comments_2) == 0:
             print("✓ Verification successful: No comments found")
         else:
