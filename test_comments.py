@@ -63,7 +63,7 @@ def test_comment_flow():
 
         # 5. Delete Comment
         print("\n[4] Deleting comment...")
-        del_res = requests.delete(f"{BASE_URL}/posts/comments/{comment_id}")
+        del_res = requests.delete(f"{BASE_URL}/posts/{post_id}/comments/{comment_id}")
         if del_res.status_code == 200:
             print("✓ Comment deleted successfully")
         else:
