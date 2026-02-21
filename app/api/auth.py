@@ -163,6 +163,8 @@ def update_profile():
     if email:
         return jsonify({'error': 'Email cannot be updated'}), 400
 
+    old_username = user.username
+
     if username:
         # Check if username is already taken by another user
         existing_user = User.query.filter_by(username=username).first()
@@ -188,6 +190,14 @@ def update_profile():
             user.user_image = image_url
 
     try:
+        # Update user's previous posts with new profile info
+        from app.models.post import Post
+        posts_to_update = Post.query.filter_by(user_handle=old_username).all()
+        for post in posts_to_update:
+            post.user_handle = user.username
+            post.user_name = user.full_name or user.username
+            post.user_image = user.user_image
+
         db.session.commit()
         return jsonify({
             'message': 'Profile updated successfully',
