@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory, url_for
 from app.extensions import db
 from app.models.post import Post
+from app.models.like import Like
+from app.utils import save_image
 from app.utils import save_image
 import os
 
@@ -10,11 +12,12 @@ bp = Blueprint('posts', __name__)
 def get_posts():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
+    user_id = request.args.get('user_id')
     
     posts_query = Post.query.order_by(Post.created_at.desc())
     posts_pagination = posts_query.paginate(page=page, per_page=per_page, error_out=False)
     
-    posts = [post.to_dict() for post in posts_pagination.items]
+    posts = [post.to_dict(current_user_id=user_id) for post in posts_pagination.items]
     
     return jsonify({
         'posts': posts,
@@ -26,8 +29,9 @@ def get_posts():
 
 @bp.route('/<int:id>', methods=['GET'])
 def get_post(id):
+    user_id = request.args.get('user_id')
     post = Post.query.get_or_404(id)
-    return jsonify(post.to_dict())
+    return jsonify(post.to_dict(current_user_id=user_id))
 
 @bp.route('', methods=['POST'])
 def create_post():
@@ -165,3 +169,47 @@ def delete_comment(post_id, comment_id):
     db.session.commit()
     
     return jsonify({'message': 'Comment deleted successfully'}), 200
+
+# Like Routes
+
+@bp.route('/<int:post_id>/like', methods=['POST'])
+def toggle_like(post_id):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data provided'}), 400
+            
+        user_id = data.get('userId')
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        # Verify post exists
+        post = Post.query.get_or_404(post_id)
+        
+        # Check if already liked
+        existing_like = Like.query.filter_by(post_id=post_id, user_id=str(user_id)).first()
+        
+        if existing_like:
+            # Unlike
+            db.session.delete(existing_like)
+            post.likes = max(0, post.likes - 1)
+            liked = False
+        else:
+            # Like
+            new_like = Like(post_id=post_id, user_id=str(user_id))
+            db.session.add(new_like)
+            post.likes += 1
+            liked = True
+            
+        db.session.commit()
+        
+        return jsonify({
+            'liked': liked, 
+            'likes': post.likes,
+            'message': 'Post liked' if liked else 'Post unliked'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
