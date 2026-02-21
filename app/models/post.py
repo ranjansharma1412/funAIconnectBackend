@@ -14,11 +14,21 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        from app.models.user import User
+        user = User.query.filter_by(username=self.user_handle).first()
+
+        current_user_name = self.user_name
+        current_user_image = self.user_image
+
+        if user:
+            current_user_name = user.full_name or user.username
+            current_user_image = user.user_image or self.user_image
+
         return {
             'id': self.id,
-            'userName': self.user_name,
+            'userName': current_user_name,
             'userHandle': self.user_handle,
-            'userImage': self.user_image,
+            'userImage': current_user_image,
             'isVerified': self.is_verified,
             'postImage': self.post_image,
             'description': self.description,

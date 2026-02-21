@@ -47,6 +47,13 @@ def create_post():
         if not user_name or not user_handle:
             return jsonify({'error': 'userName and userHandle are required'}), 400
 
+        # Fetch latest user details from DB based on user_handle
+        from app.models.user import User
+        user = User.query.filter_by(username=user_handle).first()
+        if user:
+            user_name = user.full_name or user.username
+            user_image = user.user_image
+
         post_image_path = None
         if file:
             post_image_path = save_image(file)
