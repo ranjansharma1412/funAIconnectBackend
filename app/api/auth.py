@@ -8,14 +8,16 @@ from app.utils import save_image
 
 bp = Blueprint('auth', __name__)
 
-def generate_token(user_id, email, full_name, username):
+def generate_token(user_id, email, full_name, username, token_type='access'):
     """Generate JWT token for authenticated user"""
+    exp_time = datetime.utcnow() + timedelta(minutes=15) if token_type == 'access' else datetime.utcnow() + timedelta(days=7)
     payload = {
         'id': user_id,
         'email': email,
         'name': full_name,
         'username': username,
-        'exp': datetime.utcnow() + timedelta(days=1),
+        'type': token_type,
+        'exp': exp_time,
         'iat': datetime.utcnow()
     }
     token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
@@ -36,6 +38,10 @@ def token_required(f):
                 token = token[7:]
             
             data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            
+            if data.get('type') != 'access':
+                return jsonify({'error': 'Invalid token type'}), 401
+                
             current_user = User.query.get(data['id']) # Find user by ID in DB
             if not current_user:
                  return jsonify({'error': 'User not found'}), 401
@@ -81,11 +87,13 @@ def login():
         return jsonify({'error': 'Invalid credentials'}), 401
     
     # Generate token
-    token = generate_token(user.id, user.email, user.full_name, user.username)
+    token = generate_token(user.id, user.email, user.full_name, user.username, 'access')
+    refresh_token = generate_token(user.id, user.email, user.full_name, user.username, 'refresh')
     
     return jsonify({
         'message': 'Login successful',
         'token': token,
+        'refreshToken': refresh_token,
         'user': user.to_dict()
     }), 200
 
@@ -126,13 +134,55 @@ def register():
         return jsonify({'error': 'Registration failed'}), 500
     
     # Generate token
-    token = generate_token(new_user.id, new_user.email, new_user.full_name, new_user.username)
+    token = generate_token(new_user.id, new_user.email, new_user.full_name, new_user.username, 'access')
+    refresh_token = generate_token(new_user.id, new_user.email, new_user.full_name, new_user.username, 'refresh')
     
     return jsonify({
         'message': 'Registration successful',
         'token': token,
+        'refreshToken': refresh_token,
         'user': new_user.to_dict()
     }), 201
+
+@bp.route('/refresh', methods=['POST'])
+def refresh_token():
+    """Exchange valid refresh_token for a new access_token and refresh_token"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+        
+    refresh_tok = data.get('refreshToken')
+    if not refresh_tok:
+        return jsonify({'error': 'Refresh token is required'}), 400
+        
+    try:
+        if refresh_tok.startswith('Bearer '):
+            refresh_tok = refresh_tok[7:]
+            
+        decoded = jwt.decode(refresh_tok, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        
+        if decoded.get('type') != 'refresh':
+            return jsonify({'error': 'Invalid token type. Expected refresh token.'}), 401
+            
+        user = User.query.get(decoded['id'])
+        if not user:
+            return jsonify({'error': 'User not found'}), 401
+            
+        # Issue new tokens
+        new_access_token = generate_token(user.id, user.email, user.full_name, user.username, 'access')
+        new_refresh_token = generate_token(user.id, user.email, user.full_name, user.username, 'refresh')
+        
+        return jsonify({
+            'token': new_access_token,
+            'refreshToken': new_refresh_token
+        }), 200
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Refresh token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': 'Token verification failed'}), 401
 
 @bp.route('/verify', methods=['GET'])
 @token_required
