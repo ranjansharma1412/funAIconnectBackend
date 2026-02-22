@@ -42,6 +42,30 @@ def get_post(id):
     post = Post.query.get_or_404(id)
     return jsonify(post.to_dict(current_user_id=user_id))
 
+@bp.route('/user/<int:target_user_id>', methods=['GET'])
+def get_user_posts(target_user_id):
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    current_user_id = request.args.get('current_user_id')
+    
+    from app.models.user import User
+    target_user = User.query.get_or_404(target_user_id)
+    
+    # Filter only posts by this exact user handle
+    posts_query = Post.query.filter_by(user_handle=target_user.username).order_by(Post.created_at.desc())
+    
+    posts_pagination = posts_query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    posts = [post.to_dict(current_user_id=current_user_id) for post in posts_pagination.items]
+    
+    return jsonify({
+        'posts': posts,
+        'has_next': posts_pagination.has_next,
+        'has_prev': posts_pagination.has_prev,
+        'total': posts_pagination.total,
+        'pages': posts_pagination.pages
+    }), 200
+
 @bp.route('', methods=['POST'])
 def create_post():
     try:
