@@ -24,4 +24,7 @@ def create_app(config_class=Config):
     from app.api.image import bp as image_bp
     app.register_blueprint(image_bp, url_prefix='/api/image')
 
+    from app.api.friends import bp as friends_bp
+    app.register_blueprint(friends_bp, url_prefix='/api/friends')
+
     return app
