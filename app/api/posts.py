@@ -14,7 +14,16 @@ def get_posts():
     per_page = request.args.get('per_page', 10, type=int)
     user_id = request.args.get('user_id')
     
-    posts_query = Post.query.order_by(Post.created_at.desc())
+    posts_query = Post.query
+    
+    # Exclude posts created by the currently logged-in user
+    if user_id and str(user_id).isdigit():
+        from app.models.user import User
+        current_user = User.query.get(int(user_id))
+        if current_user:
+            posts_query = posts_query.filter(Post.user_handle != current_user.username)
+            
+    posts_query = posts_query.order_by(Post.created_at.desc())
     posts_pagination = posts_query.paginate(page=page, per_page=per_page, error_out=False)
     
     posts = [post.to_dict(current_user_id=user_id) for post in posts_pagination.items]
