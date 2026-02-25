@@ -3,3 +3,4 @@ from app.models.post import Post
 from app.models.comment import Comment
 from app.models.like import Like
 from app.models.friend import Friend
+from app.models.story import Story
