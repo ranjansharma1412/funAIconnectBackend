@@ -246,3 +246,29 @@ def toggle_like(post_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@bp.route('/<int:post_id>/likes', methods=['GET'])
+def get_post_likes(post_id):
+    from app.models.user import User
+    try:
+        # Verify post exists
+        post = Post.query.get_or_404(post_id)
+        
+        # Get all likes for this post
+        likes = Like.query.filter_by(post_id=post_id).order_by(Like.created_at.desc()).all()
+        
+        users = []
+        for like in likes:
+            user_id_str = like.user_id
+            if user_id_str and user_id_str.isdigit():
+                user = User.query.get(int(user_id_str))
+                if user:
+                    users.append(user.to_dict())
+                    
+        return jsonify({
+            'likes': users,
+            'count': len(users)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
