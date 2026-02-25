@@ -16,6 +16,8 @@ class Post(db.Model):
 
     def to_dict(self, current_user_id=None):
         from app.models.user import User
+        from app.models.comment import Comment
+
         user = User.query.filter_by(username=self.user_handle).first()
 
         current_user_name = self.user_name
@@ -30,6 +32,8 @@ class Post(db.Model):
             like_record = Like.query.filter_by(post_id=self.id, user_id=str(current_user_id)).first()
             if like_record:
                 has_liked = True
+                
+        comments_count = Comment.query.filter_by(post_id=self.id).count()
 
         return {
             'id': self.id,
@@ -41,6 +45,7 @@ class Post(db.Model):
             'description': self.description,
             'hashtags': self.hashtags,
             'likes': self.likes,
+            'commentsCount': comments_count,
             'hasLiked': has_liked,
             'createdAt': self.created_at.isoformat()
         }
