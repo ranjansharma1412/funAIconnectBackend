@@ -27,4 +27,7 @@ def create_app(config_class=Config):
     from app.api.friends import bp as friends_bp
     app.register_blueprint(friends_bp, url_prefix='/api/friends')
 
+    from app.api.stories import bp as stories_bp
+    app.register_blueprint(stories_bp, url_prefix='/api/stories')
+
     return app
