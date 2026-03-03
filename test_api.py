@@ -5,11 +5,11 @@ Quick test script to verify Post API endpoints
 import requests
 import json
 
-BASE_URL = "http://localhost:5000/api/posts"
+BASE_URL = "http://localhost:5001/api/posts"
 
 def test_health():
     """Test health endpoint"""
-    response = requests.get("http://localhost:5000/api/health")
+    response = requests.get("http://localhost:5001/api/health")
     print(f"✓ Health Check: {response.json()}")
 
 def test_get_posts():
