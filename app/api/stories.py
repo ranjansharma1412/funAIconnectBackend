@@ -16,7 +16,7 @@ def get_stories():
     # Group by user handle
     grouped_stories = {}
     for story in all_stories:
-        dict_story = story.to_dict()
+        dict_story = story.to_dict(current_user_id=user_id)
         handle = dict_story['userHandle']
         if handle not in grouped_stories:
             grouped_stories[handle] = {
@@ -30,10 +30,14 @@ def get_stories():
         # Map internal story structure to frontend expected format
         grouped_stories[handle]['stories'].append({
             'id': f"story-{dict_story['id']}",
+            # Use raw internal int ID for interactions like 'Liking' a story
+            'raw_id': dict_story['id'],
             'url': dict_story['storyImage'],
             'type': 'image',
             'duration': 5000,
-            'createdAt': dict_story['createdAt']
+            'createdAt': dict_story['createdAt'],
+            'likesCount': dict_story.get('likesCount', 0),
+            'hasLiked': dict_story.get('hasLiked', False)
         })
         
     # Convert to list
@@ -115,3 +119,72 @@ def delete_story(id):
     db.session.delete(story)
     db.session.commit()
     return jsonify({'message': 'Story deleted successfully'})
+
+# Story Like Routes
+
+@bp.route('/<int:story_id>/like', methods=['POST'])
+def toggle_like(story_id):
+    try:
+        from app.models.story_like import StoryLike
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data provided'}), 400
+            
+        user_id = data.get('userId')
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        story = Story.query.get_or_404(story_id)
+        
+        # Check if already liked
+        existing_like = StoryLike.query.filter_by(story_id=story_id, user_id=str(user_id)).first()
+        
+        if existing_like:
+            # Unlike
+            db.session.delete(existing_like)
+            story.likes_count = max(0, (story.likes_count or 0) - 1)
+            liked = False
+        else:
+            # Like
+            new_like = StoryLike(story_id=story_id, user_id=str(user_id))
+            db.session.add(new_like)
+            story.likes_count = (story.likes_count or 0) + 1
+            liked = True
+            
+        db.session.commit()
+        
+        return jsonify({
+            'liked': liked, 
+            'likes': story.likes_count,
+            'message': 'Story liked' if liked else 'Story unliked'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/<int:story_id>/likes', methods=['GET'])
+def get_story_likes(story_id):
+    from app.models.user import User
+    from app.models.story_like import StoryLike
+    try:
+        story = Story.query.get_or_404(story_id)
+        
+        # Get all likes for this story
+        likes = StoryLike.query.filter_by(story_id=story_id).order_by(StoryLike.created_at.desc()).all()
+        
+        users = []
+        for like in likes:
+            user_id_str = like.user_id
+            if user_id_str and user_id_str.isdigit():
+                user = User.query.get(int(user_id_str))
+                if user:
+                    users.append(user.to_dict())
+                    
+        return jsonify({
+            'likes': users,
+            'count': len(users)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
