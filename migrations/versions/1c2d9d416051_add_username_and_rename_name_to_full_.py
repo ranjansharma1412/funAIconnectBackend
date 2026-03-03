@@ -25,9 +25,9 @@ def upgrade():
 
     # Step 2: Migrate data
     conn = op.get_bind()
-    conn.execute(sa.text("UPDATE user SET full_name = name"))
+    conn.execute(sa.text("UPDATE \"user\" SET full_name = name"))
     # Generate unique usernames for existing users
-    conn.execute(sa.text("UPDATE user SET username = 'user_' || id"))
+    conn.execute(sa.text("UPDATE \"user\" SET username = 'user_' || id"))
 
     # Step 3: Apply constraints and drop old column
     with op.batch_alter_table('user', schema=None) as batch_op:
