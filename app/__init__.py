@@ -1,6 +1,6 @@
 from flask import Flask
 from config import Config
-from app.extensions import db, migrate, cors
+from app.extensions import db, migrate, cors, socketio
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -10,6 +10,10 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     cors.init_app(app)
+    socketio.init_app(app)
+
+    # Register socket events
+    import app.chat_sockets as chat_sockets
 
     # Register Blueprints
     from app.api.main import bp as main_bp
@@ -29,5 +33,8 @@ def create_app(config_class=Config):
 
     from app.api.stories import bp as stories_bp
     app.register_blueprint(stories_bp, url_prefix='/api/stories')
+
+    from app.api.chat import bp as chat_bp
+    app.register_blueprint(chat_bp, url_prefix='/api/chat')
 
     return app
