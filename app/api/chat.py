@@ -13,6 +13,7 @@ def get_conversations():
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
+    user_id = int(user_id)
         
     # Get all conversations where the user is either user1 or user2
     conversations = Conversation.query.filter(
@@ -28,6 +29,7 @@ def get_messages(friend_id):
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
+    user_id = int(user_id)
         
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 50, type=int)
@@ -83,3 +85,23 @@ def delete_message(message_id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'Message deleted successfully'}), 200
+
+@bp.route('/upload', methods=['POST'])
+def upload_media():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected for uploading'}), 400
+        
+    from app.utils import save_image
+    url = save_image(file)
+    if not url:
+        return jsonify({'error': 'Failed to upload media'}), 500
+        
+    return jsonify({
+        'url': url,
+        'message': 'Upload successful'
+    }), 200
+
