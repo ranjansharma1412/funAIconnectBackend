@@ -108,6 +108,10 @@ def handle_send_message(data):
     friend_sid = connected_users.get(str(friend_id))
     if friend_sid:
         emit('chat_list_update', conv.to_dict(), room=friend_sid)
+        
+    sender_sid = connected_users.get(str(user_id))
+    if sender_sid:
+        emit('chat_list_update', conv.to_dict(), room=sender_sid)
 
 @socketio.on('read_message')
 def handle_read_message(data):

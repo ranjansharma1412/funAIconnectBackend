@@ -25,7 +25,7 @@ def save_image(file_storage):
     
     if allowed_file(file_storage.filename):
         try:
-            upload_result = cloudinary.uploader.upload(file_storage)
+            upload_result = cloudinary.uploader.upload(file_storage, resource_type='auto')
             return upload_result.get('secure_url')
         except Exception as e:
             print(f"Cloudinary upload failed: {e}")

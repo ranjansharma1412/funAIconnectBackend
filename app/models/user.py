@@ -30,5 +30,5 @@ class User(db.Model):
             'mobile': self.mobile,
             'bio': self.bio,
             'dob': self.dob,
-            'createdAt': self.created_at.isoformat()
+            'createdAt': self.created_at.isoformat() if self.created_at else None
         }
