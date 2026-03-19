@@ -5,4 +5,5 @@ from app.models.like import Like
 from app.models.friend import Friend
 from app.models.story import Story
 from app.models.story_like import StoryLike
+from app.models.story_comment import StoryComment
 from app.models.chat import Conversation, Message
