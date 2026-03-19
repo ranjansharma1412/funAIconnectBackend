@@ -188,3 +188,73 @@ def get_story_likes(story_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Story Comment Routes
+
+@bp.route('/<int:story_id>/comments', methods=['GET'])
+def get_comments(story_id):
+    from app.models.story_comment import StoryComment
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+
+    pagination = StoryComment.query.filter_by(story_id=story_id).order_by(StoryComment.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    comments = [comment.to_dict() for comment in pagination.items]
+
+    return jsonify({
+        'comments': comments,
+        'has_next': pagination.has_next,
+        'has_prev': pagination.has_prev,
+        'total': pagination.total,
+        'pages': pagination.pages,
+        'page': page
+    }), 200
+
+@bp.route('/<int:story_id>/comments', methods=['POST'])
+def create_comment(story_id):
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data provided'}), 400
+            
+        content = data.get('content')
+        user_id = data.get('userId')
+        
+        if not content:
+            return jsonify({'error': 'Content is required'}), 400
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        # Verify story exists
+        story = Story.query.get_or_404(story_id)
+        
+        from app.models.story_comment import StoryComment
+        comment = StoryComment(
+            content=content,
+            user_id=user_id,
+            story_id=story_id
+        )
+        
+        db.session.add(comment)
+        db.session.commit()
+        
+        return jsonify(comment.to_dict()), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/<int:story_id>/comments/<int:comment_id>', methods=['DELETE'])
+def delete_comment(story_id, comment_id):
+    from app.models.story_comment import StoryComment
+    comment = StoryComment.query.get_or_404(comment_id)
+    
+    if comment.story_id != story_id:
+        return jsonify({'error': 'Comment does not belong to this story'}), 400
+    
+    db.session.delete(comment)
+    db.session.commit()
+    
+    return jsonify({'message': 'Comment deleted successfully'}), 200
