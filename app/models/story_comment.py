@@ -39,5 +39,5 @@ class StoryComment(db.Model):
             'userHandle': user_handle,
             'userImage': user_image,
             'userParams': user_params,
-            'createdAt': self.created_at.isoformat()
+            'createdAt': self.created_at.isoformat() + 'Z'
         }

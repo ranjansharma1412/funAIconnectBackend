@@ -5,6 +5,8 @@ from flask_socketio import emit, join_room, leave_room
 from flask import request
 from sqlalchemy import or_, and_
 import json
+from app.models.user import User
+from datetime import datetime
 
 connected_users = {} # user_id -> sid mapping
 
@@ -14,6 +16,8 @@ def handle_connect():
     if user_id:
         connected_users[str(user_id)] = request.sid
         print(f"User {user_id} connected via WebSockets. SID: {request.sid}")
+        # Broadcast online status
+        emit('user_status_update', {'userId': str(user_id), 'isOnline': True}, broadcast=True)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -21,7 +25,27 @@ def handle_disconnect():
         if sid == request.sid:
             del connected_users[uid]
             print(f"User {uid} disconnected")
+            
+            user = User.query.get(int(uid))
+            if user:
+                user.last_seen = datetime.utcnow()
+                db.session.commit()
+                last_seen_str = user.last_seen.isoformat() + 'Z'
+                emit('user_status_update', {'userId': str(uid), 'isOnline': False, 'lastSeen': last_seen_str}, broadcast=True)
             break
+
+@socketio.on('check_online_status')
+def handle_check_online_status(data):
+    friend_id = str(data.get('friendId'))
+    is_online = friend_id in connected_users
+    
+    last_seen_str = None
+    if not is_online:
+        user = User.query.get(int(friend_id))
+        if user and user.last_seen:
+            last_seen_str = user.last_seen.isoformat() + 'Z'
+            
+    emit('user_status_update', {'userId': friend_id, 'isOnline': is_online, 'lastSeen': last_seen_str}, room=request.sid)
 
 @socketio.on('join_chat')
 def on_join_chat(data):

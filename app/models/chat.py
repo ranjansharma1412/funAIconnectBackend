@@ -21,7 +21,7 @@ class Conversation(db.Model):
             'id': self.id,
             'user1': self.user1.to_dict() if self.user1 else None,
             'user2': self.user2.to_dict() if self.user2 else None,
-            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None,
             'updatedAt': self.updated_at.isoformat() if self.updated_at else None,
             'latestMessage': latest_message.to_dict() if latest_message else None
         }
@@ -53,6 +53,6 @@ class Message(db.Model):
             'mediaType': self.media_type,
             'status': self.status if not self.is_deleted else 'deleted',
             'isDeleted': self.is_deleted,
-            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None,
             'time': self.created_at.strftime('%H:%M') if self.created_at else None
         }

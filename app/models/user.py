@@ -13,6 +13,7 @@ class User(db.Model):
     bio = db.Column(db.String(500), nullable=True)
     dob = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -30,5 +31,6 @@ class User(db.Model):
             'mobile': self.mobile,
             'bio': self.bio,
             'dob': self.dob,
-            'createdAt': self.created_at.isoformat() if self.created_at else None
+            'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None,
+            'lastSeen': self.last_seen.isoformat() + 'Z' if self.last_seen else None
         }
