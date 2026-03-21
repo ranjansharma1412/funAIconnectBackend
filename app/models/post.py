@@ -47,5 +47,5 @@ class Post(db.Model):
             'likes': self.likes,
             'commentsCount': comments_count,
             'hasLiked': has_liked,
-            'createdAt': self.created_at.isoformat()
+            'createdAt': self.created_at.isoformat() + 'Z'
         }
