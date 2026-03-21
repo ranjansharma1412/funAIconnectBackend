@@ -110,6 +110,7 @@ def register():
     full_name = data.get('full_name') or data.get('name', 'User')
     username = data.get('username')
     mobile = data.get('mobile') # Optional
+    gender = data.get('gender') # Optional
     
     if not email or not password or not username:
         return jsonify({'error': 'Email, password and username are required'}), 400
@@ -123,7 +124,7 @@ def register():
         return jsonify({'error': 'Username is already taken'}), 409
     
     # Create new user
-    new_user = User(email=email, full_name=full_name, username=username, mobile=mobile)
+    new_user = User(email=email, full_name=full_name, username=username, mobile=mobile, gender=gender)
     new_user.set_password(password)
     
     try:

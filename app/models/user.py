@@ -10,6 +10,7 @@ class User(db.Model):
     full_name = db.Column(db.String(100), nullable=True)
     user_image = db.Column(db.String(255), nullable=True) # Cloudinary URL
     mobile = db.Column(db.String(20), nullable=True)
+    gender = db.Column(db.String(20), nullable=True)
     bio = db.Column(db.String(500), nullable=True)
     dob = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -29,6 +30,7 @@ class User(db.Model):
             'fullName': self.full_name,
             'userImage': self.user_image,
             'mobile': self.mobile,
+            'gender': self.gender,
             'bio': self.bio,
             'dob': self.dob,
             'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None,
