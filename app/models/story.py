@@ -42,5 +42,5 @@ class Story(db.Model):
             'hashtags': self.hashtags,
             'likesCount': self.likes_count,
             'hasLiked': has_liked,
-            'createdAt': self.created_at.isoformat()
+            'createdAt': self.created_at.isoformat() + 'Z'
         }

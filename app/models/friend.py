@@ -21,7 +21,7 @@ class Friend(db.Model):
             'userId': self.user_id,
             'friendId': self.friend_id,
             'status': self.status,
-            'createdAt': self.created_at.isoformat(),
+            'createdAt': self.created_at.isoformat() + 'Z',
             'user': self.user.to_dict() if self.user else None,
             'friend_user': self.friend.to_dict() if self.friend else None
         }

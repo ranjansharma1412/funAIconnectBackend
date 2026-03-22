@@ -22,10 +22,12 @@ class Post(db.Model):
 
         current_user_name = self.user_name
         current_user_image = self.user_image
+        gender = None
 
         if user:
             current_user_name = user.full_name or user.username
             current_user_image = user.user_image or self.user_image
+            gender = user.gender
 
         has_liked = False
         if current_user_id:
@@ -40,6 +42,7 @@ class Post(db.Model):
             'userName': current_user_name,
             'userHandle': self.user_handle,
             'userImage': current_user_image,
+            'gender': gender,
             'isVerified': self.is_verified,
             'postImage': self.post_image,
             'description': self.description,
@@ -47,5 +50,5 @@ class Post(db.Model):
             'likes': self.likes,
             'commentsCount': comments_count,
             'hasLiked': has_liked,
-            'createdAt': self.created_at.isoformat()
+            'createdAt': self.created_at.isoformat() + 'Z'
         }
