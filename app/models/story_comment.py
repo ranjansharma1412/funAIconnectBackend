@@ -16,13 +16,13 @@ class StoryComment(db.Model):
         # Handle user relationship safely
         user_name = ""
         user_handle = ""
-        user_image = ""
-        user_params = None
+        user_gender = None
         
         if self.user:
             user_name = self.user.full_name or self.user.username
             user_handle = self.user.username
             user_image = self.user.user_image
+            user_gender = self.user.gender
             user_params = {
                 'id': self.user.id,
                 'name': user_name,
@@ -38,6 +38,7 @@ class StoryComment(db.Model):
             'userName': user_name,
             'userHandle': user_handle,
             'userImage': user_image,
+            'gender': user_gender,
             'userParams': user_params,
             'createdAt': self.created_at.isoformat() + 'Z'
         }
