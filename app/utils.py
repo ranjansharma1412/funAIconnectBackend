@@ -63,7 +63,7 @@ def save_image(file_storage):
         processed_file = convert_to_webp(file_storage)
         
         # Determine the filename to check against allowed expressions
-        check_name = getattr(processed_file, 'name', file_storage.filename)
+        check_name = getattr(processed_file, 'filename', getattr(processed_file, 'name', file_storage.filename))
         
         if allowed_file(check_name):
             # Pass format='webp' to Cloudinary if we dynamically created the buffer
