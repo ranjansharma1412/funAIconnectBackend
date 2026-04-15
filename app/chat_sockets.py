@@ -7,6 +7,7 @@ from sqlalchemy import or_, and_
 import json
 from app.models.user import User
 from datetime import datetime
+from app.services.notification_service import send_chat_notification
 
 connected_users = {} # user_id -> sid mapping
 
@@ -122,6 +123,18 @@ def handle_send_message(data):
     if str(friend_id) in connected_users:
         msg.status = 'delivered'
         db.session.commit()
+    else:
+        # Push notification natively when offline
+        sender_user = User.query.get(user_id)
+        target_user = User.query.get(friend_id)
+        if sender_user and target_user:
+            send_chat_notification(
+                target_user, 
+                sender_user.full_name or sender_user.username, 
+                conv.id, 
+                msg.text if msg.text else '',
+                sender_id=user_id
+            )
     
     room = f"chat_{uid}_{fid}"
     

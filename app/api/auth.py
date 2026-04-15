@@ -77,6 +77,7 @@ def login():
         identifier = data.get('username')
         
     password = data.get('password')
+    fcm_token = data.get('fcmToken')
     
     if not identifier or not password:
         return jsonify({'error': 'Identifier (email or username) and password are required'}), 400
@@ -85,6 +86,11 @@ def login():
     user = User.query.filter((User.email == identifier) | (User.username == identifier)).first()
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid credentials'}), 401
+    
+    # Store dynamic FCM Token
+    if fcm_token:
+        user.fcm_token = fcm_token
+        db.session.commit()
     
     # Generate token
     token = generate_token(user.id, user.email, user.full_name, user.username, 'access')
@@ -111,6 +117,7 @@ def register():
     username = data.get('username')
     mobile = data.get('mobile') # Optional
     gender = data.get('gender') # Optional
+    fcm_token = data.get('fcmToken') # Optional
     
     if not email or not password or not username:
         return jsonify({'error': 'Email, password and username are required'}), 400
@@ -124,7 +131,7 @@ def register():
         return jsonify({'error': 'Username is already taken'}), 409
     
     # Create new user
-    new_user = User(email=email, full_name=full_name, username=username, mobile=mobile, gender=gender)
+    new_user = User(email=email, full_name=full_name, username=username, mobile=mobile, gender=gender, fcm_token=fcm_token)
     new_user.set_password(password)
     
     try:
@@ -192,6 +199,25 @@ def verify_token():
     return jsonify({
         'message': 'Token is valid',
         'user': request.current_user.to_dict()
+    }), 200
+
+@bp.route('/fcm-token', methods=['PUT'])
+@token_required
+def update_fcm_token():
+    """Update FCM token for logged in user"""
+    data = request.get_json()
+    fcm_token = data.get('fcmToken')
+    
+    if not fcm_token:
+         return jsonify({'error': 'fcmToken is required'}), 400
+         
+    user = request.current_user
+    user.fcm_token = fcm_token
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'FCM Token updated successfully',
+        'user': user.to_dict()
     }), 200
 
 @bp.route('/profile', methods=['PUT'])
