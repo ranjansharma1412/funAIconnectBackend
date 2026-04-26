@@ -5,6 +5,9 @@ from app.models.like import Like
 from app.utils import save_image
 from app.utils import save_image
 import os
+from app.models.user import User
+from app.services.notification_service import send_comment_notification
+from app.services.notification_service import send_like_notification
 
 bp = Blueprint('posts', __name__)
 
@@ -184,6 +187,14 @@ def create_comment(post_id):
         db.session.add(comment)
         db.session.commit()
         
+        # Send Comment Push Notification natively
+        commenter = User.query.get(user_id)
+        target_user = User.query.filter_by(username=post.user_handle).first()
+        
+        if target_user and commenter and target_user.id != commenter.id:
+            # Fire and forget
+            send_comment_notification(target_user, commenter.full_name or commenter.username, post.id)
+        
         return jsonify(comment.to_dict()), 201
         
     except Exception as e:
@@ -235,6 +246,15 @@ def toggle_like(post_id):
             liked = True
             
         db.session.commit()
+        
+        if liked:
+            # Send Like Push Notification securely tracking handles
+            liker = User.query.get(user_id)
+            target_user = User.query.filter_by(username=post.user_handle).first()
+            
+            if target_user and liker and target_user.id != liker.id:
+                # Fire and forget execution mapping organically
+                send_like_notification(target_user, liker.full_name or liker.username, post.id)
         
         return jsonify({
             'liked': liked, 

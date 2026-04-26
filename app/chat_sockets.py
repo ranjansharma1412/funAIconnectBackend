@@ -7,6 +7,7 @@ from sqlalchemy import or_, and_
 import json
 from app.models.user import User
 from datetime import datetime
+from app.services.notification_service import send_chat_notification
 
 connected_users = {} # user_id -> sid mapping
 
@@ -122,6 +123,18 @@ def handle_send_message(data):
     if str(friend_id) in connected_users:
         msg.status = 'delivered'
         db.session.commit()
+    else:
+        # Push notification natively when offline
+        sender_user = User.query.get(user_id)
+        target_user = User.query.get(friend_id)
+        if sender_user and target_user:
+            send_chat_notification(
+                target_user, 
+                sender_user.full_name or sender_user.username, 
+                conv.id, 
+                msg.text if msg.text else '',
+                sender_id=user_id
+            )
     
     room = f"chat_{uid}_{fid}"
     
@@ -149,3 +162,12 @@ def handle_read_message(data):
         db.session.commit()
         room = f"chat_{min(int(user_id), int(friend_id))}_{max(int(user_id), int(friend_id))}"
         emit('message_status_update', {'messageId': str(message_id), 'status': 'read'}, room=room)
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    message_id = data.get('messageId')
+    user_id = int(data.get('userId'))
+    friend_id = int(data.get('friendId'))
+    
+    room = f"chat_{min(user_id, friend_id)}_{max(user_id, friend_id)}"
+    emit('message_deleted', {'messageId': str(message_id)}, room=room)

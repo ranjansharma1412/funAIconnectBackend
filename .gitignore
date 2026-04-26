@@ -10,3 +10,4 @@ build/
 *.egg-info/
 .env
 .DS_Store
+app/services/firebase_adminsdk.json
