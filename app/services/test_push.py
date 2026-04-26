@@ -12,10 +12,10 @@ except ValueError:
     pass
 
 token = "dy6YIDLmQBmkcFDiKQAuTY:APA91bEi9OgEf7KvfkfIhG9UsL4LkZdF1KvW7JdgEng4V2cH3FMCCVBVAFu3jDt56WvxJq-3m0_N8Vcg9jxyIeH5rMh6nI4DkauJjzcS49GgAdOqkN8rYc0"
-title = "Data-only Test"
-body = "This is a data-only test using Notifee after fixing permissions!"
+title = "Friend Request"
+body = "You have a new friend request! Tap to see."
 data = {
-    "category": "TEST",
+    "category": "FRIEND_REQUEST",
     "test_id": "12345",
     "title": title,
     "body": body
@@ -25,6 +25,14 @@ print(f"Sending notification to token: {token}...")
 message = messaging.Message(
     data=data,
     token=token,
+    android=messaging.AndroidConfig(
+        priority='high'
+    ),
+    apns=messaging.APNSConfig(
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(content_available=True)
+        )
+    )
 )
 
 try:

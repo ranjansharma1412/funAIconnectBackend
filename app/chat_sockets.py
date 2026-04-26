@@ -162,3 +162,12 @@ def handle_read_message(data):
         db.session.commit()
         room = f"chat_{min(int(user_id), int(friend_id))}_{max(int(user_id), int(friend_id))}"
         emit('message_status_update', {'messageId': str(message_id), 'status': 'read'}, room=room)
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    message_id = data.get('messageId')
+    user_id = int(data.get('userId'))
+    friend_id = int(data.get('friendId'))
+    
+    room = f"chat_{min(user_id, friend_id)}_{max(user_id, friend_id)}"
+    emit('message_deleted', {'messageId': str(message_id)}, room=room)

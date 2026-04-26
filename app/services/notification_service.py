@@ -37,6 +37,14 @@ def _send_notification(fcm_token, title, body, data_payload):
         message = messaging.Message(
             data=safe_data,
             token=fcm_token,
+            android=messaging.AndroidConfig(
+                priority='high'
+            ),
+            apns=messaging.APNSConfig(
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(content_available=True)
+                )
+            )
         )
         response = messaging.send(message)
         logging.info(f"Successfully sent message: {response}")
