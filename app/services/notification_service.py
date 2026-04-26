@@ -30,11 +30,11 @@ def _send_notification(fcm_token, title, body, data_payload):
         # We enforce string format for all keys and values in data_payload dictionary
         safe_data = {str(k): str(v) for k, v in data_payload.items()} if data_payload else {}
         
+        # Add title and body to data payload to make it a data-only message
+        safe_data['title'] = str(title)
+        safe_data['body'] = str(body)
+        
         message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body,
-            ),
             data=safe_data,
             token=fcm_token,
         )
